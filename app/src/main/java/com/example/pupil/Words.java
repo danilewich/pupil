@@ -1,0 +1,466 @@
+package com.example.pupil;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.os.Handler;
+import android.support.constraint.Group;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+public class Words extends Fragment implements View.OnClickListener {
+
+    Cursor c = null;
+    Cursor cc = null;
+    Button btn1, btn2, btn3, btn4, btn5, btn6, rightBtn;
+    TextView tw;
+    private DBHelper myDBHelper;
+    private SQLiteDatabase myDB;
+    Context thisContext;
+    int rightAnswer = -1;
+    int rusWId = -1;
+    int engWId = -1;
+    boolean language_change = true;
+    String rightWord;
+    ImageView iv;
+
+    /*Group groupBtn;*/
+
+    public Words() {
+    }
+
+    public static Words newInstance() {
+        return new Words();
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.main, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+         switch (item.getItemId()) {
+            case R.id.item_change:
+                if (language_change) {
+                    language_change = false;
+                    printWord();
+                } else {
+                    language_change = true;
+                    printWord();
+                }
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_words, container, false);
+        thisContext = getActivity();
+
+        myDBHelper = new DBHelper(thisContext);
+        myDBHelper.updateDataBase();
+        myDB = myDBHelper.getWritableDatabase();
+
+        btn1 = (Button) view.findViewById(R.id.btn1);
+        btn2 = (Button) view.findViewById(R.id.btn2);
+        btn3 = (Button) view.findViewById(R.id.btn3);
+        btn4 = (Button) view.findViewById(R.id.btn4);
+        btn5 = (Button) view.findViewById(R.id.btn5);
+        btn6 = (Button) view.findViewById(R.id.btn6);
+        tw = (TextView) view.findViewById(R.id.textView);
+
+        iv = (ImageView)inflater.inflate(R.layout.test, null);
+
+        /*groupBtn = (Group) view.findViewById(R.id.groupBtn);*/
+
+        btn1.setOnClickListener(this);
+        btn2.setOnClickListener(this);
+        btn3.setOnClickListener(this);
+        btn4.setOnClickListener(this);
+        btn5.setOnClickListener(this);
+        btn6.setOnClickListener(this);
+
+        printWord();
+
+        return view;
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        switch (v.getId()) {
+            case R.id.btn1:
+                selectAnswer(btn1, 1);
+                break;
+            case R.id.btn2:
+                selectAnswer(btn2, 2);
+                break;
+            case R.id.btn3:
+                selectAnswer(btn3, 3);
+                break;
+            case R.id.btn4:
+                selectAnswer(btn4, 4);
+                break;
+            case R.id.btn5:
+                selectAnswer(btn5, 5);
+                break;
+            case R.id.btn6:
+                selectAnswer(btn6, 6);
+                break;
+        }
+
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                printWord();
+            }
+        }, 2000);
+    }
+
+    /*@Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putInt(SOME_VALUE_KEY, someStateValue);
+        super.onSaveInstanceState(outState);
+    }*/
+
+    public void selectAnswer(Button btn, int id) {
+        String sql;
+
+        if (rightAnswer == id) {
+            btn.setBackgroundResource(R.drawable.btn_right_answer);
+            btn.setTextColor(getResources().getColor(R.color.textColorPrimary));
+            sql = "INSERT INTO history(id_eng_words, id_rus_word, correctly)"
+                    + "VALUES (?, ?, ?)";
+            myDB.execSQL(sql, new String[]{String.valueOf(engWId), String.valueOf(rusWId), "Y"});
+        } else {
+            btn.setBackgroundResource(R.drawable.btn_wrong_answer);
+            btn.setTextColor(getResources().getColor(R.color.textColorPrimary));
+
+            rightBtn.setBackgroundResource(R.drawable.btn_right_answer);
+            rightBtn.setTextColor(getResources().getColor(R.color.textColorPrimary));
+
+            sql = "INSERT INTO history(id_eng_words, id_rus_word, correctly)"
+                    + "VALUES (?, ?, ?)";
+            myDB.execSQL(sql, new String[]{String.valueOf(engWId), String.valueOf(rusWId), "N"});
+        }
+    }
+
+    public void printWord() {
+
+        String engWName = "";
+        String rusWName = "";
+        int wrong_minus_right = 2;
+        int last_time = 5;
+
+        String[] wrongWords = new String[5];
+        int a = 1; // начальное значение диапазона для кнопок
+        int b = 6; // конечное значение диапазона для кнопок
+        rightAnswer = a + (int) (Math.random() * b);
+
+        for (int i = 0; i < 2; i++) {
+
+            if (i == 0) {
+                wrong_minus_right = 3;
+                last_time = 5;
+            } else if (i == 1) {
+                wrong_minus_right = -100;
+                last_time = 4320; // три дня
+            }
+            c = myDB.rawQuery("SELECT ifnull(max(name_eng_word), -1),\n" +
+                    "       _id_eng_word,\n" +
+                    "       _id_rus_word,\n" +
+                    "       name_rus_word,\n" +
+                    "       wrong_minus_right,\n" +
+                    "       last_time\n" +
+                    "  FROM (\n" +
+                    "           SELECT name_eng_word,\n" +
+                    "                  _id_eng_word,\n" +
+                    "                  _id_rus_word,\n" +
+                    "                  name_rus_word,\n" +
+                    "                  wrong_minus_right,\n" +
+                    "                  last_time\n" +
+                    "             FROM (\n" +
+                    "                      SELECT name_eng_word,\n" +
+                    "                             _id_eng_word,\n" +
+                    "                             _id_rus_word,\n" +
+                    "                             name_rus_word,\n" +
+                    "                             wrong_minus_right,\n" +
+                    "                             CAST ( (julianday('now', 'localtime') - julianday(cur_date) ) * 24 * 60 AS INTEGER) AS last_time\n" +
+                    "                        FROM (\n" +
+                    "                                 SELECT ( (\n" +
+                    "                                              SELECT count( * ) \n" +
+                    "                                                FROM history h\n" +
+                    "                                               WHERE h.correctly = 'N' AND \n" +
+                    "                                                     h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                     h.id_eng_words = ew._id_eng_word\n" +
+                    "                                          )\n" +
+                    "-                                       (\n" +
+                    "                                            SELECT count( * ) \n" +
+                    "                                              FROM history h\n" +
+                    "                                             WHERE h.correctly = 'Y' AND \n" +
+                    "                                                   h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                   h.id_eng_words = ew._id_eng_word\n" +
+                    "                                        )\n" +
+                    "                                        ) AS wrong_minus_right,\n" +
+                    "                                        (\n" +
+                    "                                            SELECT max(cur_date) \n" +
+                    "                                              FROM history h\n" +
+                    "                                             WHERE h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                   h.id_eng_words = ew._id_eng_word\n" +
+                    "                                        )\n" +
+                    "                                        AS cur_date,\n" +
+                    "                                        rw.name_rus_word,\n" +
+                    "                                        ew.name_eng_word,\n" +
+                    "                                        ew._id_eng_word,\n" +
+                    "                                        rw._id_rus_word\n" +
+                    "                                   FROM rus_words rw,\n" +
+                    "                                        rus_eng_words rew,\n" +
+                    "                                        eng_words ew\n" +
+                    "                                  WHERE rw._id_rus_word = rew.id_rus_word AND \n" +
+                    "                                        ew._id_eng_word = rew.id_eng_word\n" +
+                    "                                  ORDER BY RANDOM() \n" +
+                    "                             )\n" +
+                    "                  )\n" +
+                    "            WHERE wrong_minus_right > " + wrong_minus_right + " AND \n" +
+                    "                  last_time > " + last_time + " \n" +
+                    "            ORDER BY RANDOM() \n" +
+                    "            LIMIT 1\n" +
+                    "       )", null);
+            c.moveToFirst();
+
+            if (c.getInt(0) == -1) {
+                continue;
+            } else break;
+        }
+
+        c.moveToFirst();
+        if (c.getInt(0) == -1) {
+            c = myDB.rawQuery("WITH minus AS (\n" +
+                    "    SELECT name_eng_word,\n" +
+                    "           _id_eng_word,\n" +
+                    "           _id_rus_word,\n" +
+                    "           name_rus_word\n" +
+                    "      FROM (\n" +
+                    "               SELECT name_eng_word,\n" +
+                    "                      _id_eng_word,\n" +
+                    "                      _id_rus_word,\n" +
+                    "                      name_rus_word,\n" +
+                    "                      wrong_minus_right,\n" +
+                    "                      last_time\n" +
+                    "                 FROM (\n" +
+                    "                          SELECT name_eng_word,\n" +
+                    "                                 _id_eng_word,\n" +
+                    "                                 _id_rus_word,\n" +
+                    "                                 name_rus_word,\n" +
+                    "                                 wrong_minus_right,\n" +
+                    "                                 CAST ( (julianday('now', 'localtime') - julianday(cur_date) ) * 24 * 60 AS INTEGER) AS last_time\n" +
+                    "                            FROM (\n" +
+                    "                                     SELECT ( (\n" +
+                    "                                                  SELECT count( * ) \n" +
+                    "                                                    FROM history h\n" +
+                    "                                                   WHERE h.correctly = 'N' AND \n" +
+                    "                                                         h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                         h.id_eng_words = ew._id_eng_word\n" +
+                    "                                              )\n" +
+                    "-                                           (\n" +
+                    "                                                SELECT count( * ) \n" +
+                    "                                                  FROM history h\n" +
+                    "                                                 WHERE h.correctly = 'Y' AND \n" +
+                    "                                                       h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                       h.id_eng_words = ew._id_eng_word\n" +
+                    "                                            )\n" +
+                    "                                            ) AS wrong_minus_right,\n" +
+                    "                                            (\n" +
+                    "                                                SELECT max(cur_date) \n" +
+                    "                                                  FROM history h\n" +
+                    "                                                 WHERE h.id_rus_word = rw._id_rus_word AND \n" +
+                    "                                                       h.id_eng_words = ew._id_eng_word\n" +
+                    "                                            )\n" +
+                    "                                            AS cur_date,\n" +
+                    "                                            rw.name_rus_word,\n" +
+                    "                                            ew.name_eng_word,\n" +
+                    "                                            ew._id_eng_word,\n" +
+                    "                                            rw._id_rus_word\n" +
+                    "                                       FROM rus_words rw,\n" +
+                    "                                            rus_eng_words rew,\n" +
+                    "                                            eng_words ew\n" +
+                    "                                      WHERE rw._id_rus_word = rew.id_rus_word AND \n" +
+                    "                                            ew._id_eng_word = rew.id_eng_word\n" +
+                    "                                      ORDER BY RANDOM() \n" +
+                    "                                 )\n" +
+                    "                      )\n" +
+                    "                WHERE wrong_minus_right < -4 AND \n" +
+                    "                      last_time < 2880\n" +
+                    "           )\n" +
+                    ")\n" +
+                    "SELECT *\n" +
+                    "  FROM (\n" +
+                    "           SELECT ew.name_eng_word,\n" +
+                    "                  ew._id_eng_word,\n" +
+                    "                  rw._id_rus_word,\n" +
+                    "                  rw.name_rus_word\n" +
+                    "             FROM eng_words ew,\n" +
+                    "                  rus_words rw,\n" +
+                    "                  rus_eng_words rew\n" +
+                    "            WHERE ew._id_eng_word = rew.id_eng_word AND \n" +
+                    "                  rew.id_rus_word = rw._id_rus_word\n" +
+                    "           EXCEPT\n" +
+                    "           SELECT *\n" +
+                    "             FROM minus\n" +
+                    "       )\n" +
+                    " ORDER BY RANDOM() \n" +
+                    " LIMIT 1", null);
+        }
+        c.moveToFirst();
+
+        /*c.moveToFirst();
+        if (c.getInt(0) == -1) {
+            c = myDB.rawQuery("SELECT ew.name_eng_word,\n" +
+                    "       ew._id_eng_word,\n" +
+                    "       rw._id_rus_word,\n" +
+                    "       rw.name_rus_word\n" +
+                    "  FROM eng_words ew,\n" +
+                    "       rus_words rw,\n" +
+                    "       rus_eng_words rew\n" +
+                    " WHERE ew._id_eng_word = rew.id_eng_word AND \n" +
+                    "       rew.id_rus_word = rw._id_rus_word \n" +
+                    " ORDER BY RANDOM() \n" +
+                    " LIMIT 1", null);
+        }
+        c.moveToFirst();*/
+
+        while (!c.isAfterLast()) {
+            engWName = c.getString(0);
+            rusWName = c.getString(3);
+            rusWId = c.getInt(2);
+            engWId = c.getInt(1);
+            c.moveToNext();
+        }
+        c.close();
+
+        if (language_change) {
+            c = myDB.rawQuery("SELECT rw._id_rus_word,\n" +
+                    "       rw.name_rus_word\n" +
+                    "  FROM rus_words rw\n" +
+                    " WHERE rw._id_rus_word <> " + rusWId + " \n" +
+                    " ORDER BY RANDOM() \n" +
+                    " LIMIT 5", null);
+        } else {
+            c = myDB.rawQuery("SELECT ew._id_eng_word,\n" +
+                    "       ew.name_eng_word\n" +
+                    "  FROM eng_words ew\n" +
+                    " WHERE ew._id_eng_word <> " + engWId + " \n" +
+                    " ORDER BY RANDOM() \n" +
+                    " LIMIT 5", null);
+        }
+        c.moveToFirst();
+
+        for (int i = 0; i < 5; i++) {
+            wrongWords[i] = c.getString(1);
+            c.moveToNext();
+        }
+        c.close();
+
+        btn1.setBackgroundResource(R.drawable.btn_design);
+        btn1.setTextColor(getResources().getColor(R.color.textColor));
+        btn2.setBackgroundResource(R.drawable.btn_design);
+        btn2.setTextColor(getResources().getColor(R.color.textColor));
+        btn3.setBackgroundResource(R.drawable.btn_design);
+        btn3.setTextColor(getResources().getColor(R.color.textColor));
+        btn4.setBackgroundResource(R.drawable.btn_design);
+        btn4.setTextColor(getResources().getColor(R.color.textColor));
+        btn5.setBackgroundResource(R.drawable.btn_design);
+        btn5.setTextColor(getResources().getColor(R.color.textColor));
+        btn6.setBackgroundResource(R.drawable.btn_design);
+        btn6.setTextColor(getResources().getColor(R.color.textColor));
+
+        //groupBtn.setBackgroundResource(R.drawable.btn_wrong_answer);
+
+
+        if (language_change) {
+            tw.setText(engWName);
+            rightWord = rusWName;
+        } else {
+            tw.setText(rusWName);
+            rightWord = engWName;
+        }
+
+        switch (rightAnswer) {
+            case 1:
+                btn1.setText(rightWord);
+                rightBtn = btn1;
+                btn2.setText(wrongWords[0]);
+                btn3.setText(wrongWords[1]);
+                btn4.setText(wrongWords[2]);
+                btn5.setText(wrongWords[3]);
+                btn6.setText(wrongWords[4]);
+                break;
+            case 2:
+                btn2.setText(rightWord);
+                rightBtn = btn2;
+                btn1.setText(wrongWords[0]);
+                btn3.setText(wrongWords[1]);
+                btn4.setText(wrongWords[2]);
+                btn5.setText(wrongWords[3]);
+                btn6.setText(wrongWords[4]);
+                break;
+            case 3:
+                btn3.setText(rightWord);
+                rightBtn = btn3;
+                btn2.setText(wrongWords[0]);
+                btn1.setText(wrongWords[1]);
+                btn4.setText(wrongWords[2]);
+                btn5.setText(wrongWords[3]);
+                btn6.setText(wrongWords[4]);
+                break;
+            case 4:
+                btn4.setText(rightWord);
+                rightBtn = btn4;
+                btn2.setText(wrongWords[0]);
+                btn3.setText(wrongWords[1]);
+                btn1.setText(wrongWords[2]);
+                btn5.setText(wrongWords[3]);
+                btn6.setText(wrongWords[4]);
+                break;
+            case 5:
+                btn5.setText(rightWord);
+                rightBtn = btn5;
+                btn2.setText(wrongWords[0]);
+                btn3.setText(wrongWords[1]);
+                btn4.setText(wrongWords[2]);
+                btn1.setText(wrongWords[3]);
+                btn6.setText(wrongWords[4]);
+                break;
+            case 6:
+                btn6.setText(rightWord);
+                rightBtn = btn6;
+                btn2.setText(wrongWords[0]);
+                btn3.setText(wrongWords[1]);
+                btn4.setText(wrongWords[2]);
+                btn5.setText(wrongWords[3]);
+                btn1.setText(wrongWords[4]);
+                break;
+        }
+    }
+}

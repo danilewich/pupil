@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">pupil</string>
+    <string name="title_home">Словарь</string>
+    <string name="title_words">Слова</string>
+    <string name="title_settings">Настройки</string>
+    <string name="item_change">Сменить язык</string>
+</resources>
