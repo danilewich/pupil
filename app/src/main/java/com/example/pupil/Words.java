@@ -3,10 +3,8 @@ package com.example.pupil;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.constraint.Group;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -14,8 +12,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -88,8 +84,6 @@ public class Words extends Fragment implements View.OnClickListener {
         btn5 = (Button) view.findViewById(R.id.btn5);
         btn6 = (Button) view.findViewById(R.id.btn6);
         tw = (TextView) view.findViewById(R.id.textView);
-
-        iv = (ImageView)inflater.inflate(R.layout.test, null);
 
         /*groupBtn = (Group) view.findViewById(R.id.groupBtn);*/
 
