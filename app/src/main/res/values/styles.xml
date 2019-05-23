@@ -11,4 +11,10 @@
         <item name="android:editTextColor">@color/textColor</item>
     </style>
 
+    <style name="ButtonMain">
+
+        <item name="android:background">@drawable/button_main</item>
+
+    </style>
+
 </resources>

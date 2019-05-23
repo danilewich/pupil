@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -35,6 +36,12 @@ public class Home extends Fragment implements View.OnClickListener {
 
     public static Home newInstance() {
         return new Home();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
     }
 
     @Override

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,6 +27,12 @@ public class Settings extends Fragment implements View.OnClickListener {
 
     public static Settings newInstance() {
         return new Settings();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
     }
 
     @Override

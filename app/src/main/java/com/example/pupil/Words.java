@@ -12,9 +12,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Words extends Fragment implements View.OnClickListener {
 
@@ -30,7 +33,6 @@ public class Words extends Fragment implements View.OnClickListener {
     int engWId = -1;
     boolean language_change = true;
     String rightWord;
-    ImageView iv;
 
     /*Group groupBtn;*/
 
@@ -42,9 +44,9 @@ public class Words extends Fragment implements View.OnClickListener {
     }
 
     public void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        setRetainInstance(true);
     }
 
     @Override
@@ -176,7 +178,7 @@ public class Words extends Fragment implements View.OnClickListener {
 
             if (i == 0) {
                 wrong_minus_right = 3;
-                last_time = 5;
+                last_time = 10;
             } else if (i == 1) {
                 wrong_minus_right = -100;
                 last_time = 4320; // три дня
