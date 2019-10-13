@@ -34,8 +34,6 @@ public class Words extends Fragment implements View.OnClickListener {
     boolean language_change = true;
     String rightWord;
 
-    /*Group groupBtn;*/
-
     public Words() {
     }
 
