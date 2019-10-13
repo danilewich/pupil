@@ -23,13 +23,10 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    /*static {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-    }*/
-
     private TextView mTextMessage;
     private ActionBar toolbar;
     private int curPageId = R.id.navigation_words;
+
 
     private Words fragmentSimple;
     private final String SIMPLE_FRAGMENT_TAG = "myfragmenttag";
