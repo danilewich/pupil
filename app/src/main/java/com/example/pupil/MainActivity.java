@@ -42,11 +42,9 @@ public class MainActivity extends AppCompatActivity {
         toolbar = getSupportActionBar();
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
 
-        if (savedInstanceState == null) {
-            toolbar.setTitle(R.string.title_words);
-            navigation.setSelectedItemId(R.id.navigation_words);
-            loadFragment(Words.newInstance());
-        }
+        toolbar.setTitle(R.string.title_words);
+        navigation.setSelectedItemId(R.id.navigation_words);
+        loadFragment(Words.newInstance());
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 

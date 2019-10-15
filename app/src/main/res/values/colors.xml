@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#9C27B0</color>
-    <color name="colorPrimaryDark">#50115E</color>
+    <color name="colorPrimaryDark">#50115E</color> <!--50115E-->
     <color name="colorAccent">#50115E</color>
     <color name="colorNav">#9C27B0</color>
     <color name="colorNavItems">#77FFFFFF</color>
     <color name="colorNavItemsSel">#FFFFFF</color>
     <color name="textColorPrimary">#FFFFFF</color>
     <color name="textColor">#575151</color>
+    <color name="titleTextColor">#F44336</color>
 </resources>

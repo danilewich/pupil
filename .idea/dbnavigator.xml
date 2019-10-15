@@ -83,7 +83,7 @@
           <port value="" />
           <database value="" />
           <files>
-            <file path="C:\Users\danilevich\Desktop\pupilDB.db" schema="main" />
+            <file path="C:\Users\danilevich\Desktop\SQLiteStudio\pupilDB2.db" schema="main" />
           </files>
           <os-authentication value="false" />
           <empty-authentication value="false" />

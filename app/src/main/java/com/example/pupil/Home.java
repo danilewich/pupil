@@ -3,7 +3,6 @@ package com.example.pupil;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -15,12 +14,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-
 
 public class Home extends Fragment implements View.OnClickListener {
 
@@ -30,6 +29,8 @@ public class Home extends Fragment implements View.OnClickListener {
     private DBHelper myDBHelper;
     private SQLiteDatabase myDB;
     private Context thisContext;
+    private LinearLayout llMain;
+    List<CheckBox> allCbs = new ArrayList<CheckBox>();
 
     public Home() {
     }
@@ -58,10 +59,35 @@ public class Home extends Fragment implements View.OnClickListener {
         btnAdd = (Button) view.findViewById(R.id.buttonAdd);
         etRus = (TextInputLayout) view.findViewById(R.id.editTextRus);
         etEng = (TextInputLayout) view.findViewById(R.id.editTextEng);
-
+        llMain = (LinearLayout) view.findViewById(R.id.ll_main);
+        createCB();
         btnAdd.setOnClickListener(this);
 
         return view;
+    }
+
+    public void createCB() {
+
+        Cursor c = myDB.rawQuery("SELECT g.name_group, g.id_group\n" +
+                "  FROM groups g", null);
+        c.moveToFirst();
+        CheckBox checkbox;
+
+        while (!c.isAfterLast()) {
+
+            checkbox = new CheckBox(thisContext);
+            allCbs.add(checkbox);
+            checkbox.setText(c.getString(0).toLowerCase());
+            checkbox.setTextSize(23);
+            checkbox.setTextColor(getResources().getColor(R.color.textColor));
+            checkbox.setId(c.getInt(1));
+            LinearLayout.LayoutParams CL = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            CL.topMargin = 10;
+            llMain.addView(checkbox, CL);
+            c.moveToNext();
+        }
+        c.close();
     }
 
     @Override
@@ -229,52 +255,20 @@ public class Home extends Fragment implements View.OnClickListener {
                         Toast toast = Toast.makeText(thisContext, "Пара добавлена в словарь", Toast.LENGTH_SHORT);
                         toast.setGravity(Gravity.CENTER, 0, 0);
                         toast.show();
+
+                        int size = allCbs.size();
+                        for (int i = 0; i < size; i++) {
+                            if (allCbs.get(i).isChecked()) {
+                                sql = "INSERT INTO groups_eng_words(id_group, id_eng_word)"
+                                        + "VALUES (?, ?)";
+                                myDB.execSQL(sql, new Integer[]{allCbs.get(i).getId(), newEngId});
+                            }
+                        }
                     }
                     mainCursor.moveToNext();
                 }
                 mainCursor.close();
                 break;
-
-            /*case R.id.btnRead:
-                Cursor cursor = database.query(DBHelper.TABLE_CONTACTS, null, null, null, null, null, null);
-
-                if (cursor.moveToFirst()) {
-                    int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
-                    int nameIndex = cursor.getColumnIndex(DBHelper.KEY_NAME);
-                    int mailIndex = cursor.getColumnIndex(DBHelper.KEY_MAIL);
-
-                    do {
-                        Log.d("mLog", "ID = " + cursor.getInt(idIndex) +
-                                ", name = " + cursor.getString(nameIndex) +
-                                ", mail = " + cursor.getString(mailIndex));
-                    } while (cursor.moveToNext());
-                } else
-                    Log.d("mLog", "0 rows");
-
-                cursor.close();
-                break;
-
-            case R.id.btnClear:
-                database.delete(DBHelper.TABLE_CONTACTS, null, null);
-                break;
-
-            case R.id.btnDel:
-                if (id.equalsIgnoreCase("")){
-                    break;
-                }
-                int delCount = database.delete(DBHelper.TABLE_CONTACTS, DBHelper.KEY_NAME + "= ?", new String[] {id});
-                Log.d("mLog", "delCount = " + delCount);
-                break;
-
-            case R.id.btnUpd:
-                if (id.equalsIgnoreCase("")){
-                    break;
-                }
-                contentValues.put(DBHelper.KEY_NAME, name);
-                contentValues.put(DBHelper.KEY_MAIL, mail);
-                int updCount = database.update(DBHelper.TABLE_CONTACTS, contentValues , DBHelper.KEY_NAME + "= ?", new String[] {id});
-                Log.d("mLog", "updCount = " + updCount);
-                break;*/
         }
         //myDBHelper.close();
     }

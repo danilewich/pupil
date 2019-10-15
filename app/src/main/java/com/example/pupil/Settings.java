@@ -3,22 +3,27 @@ package com.example.pupil;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.constraint.Group;
+import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class Settings extends Fragment implements View.OnClickListener {
 
     AlertDialog.Builder ad;
     Context thisContext;
-    Button btnClear;
+    Button btnClear, btnGrp;
     private DBHelper myDBHelper;
     private SQLiteDatabase myDB;
 
@@ -45,8 +50,10 @@ public class Settings extends Fragment implements View.OnClickListener {
         myDB = myDBHelper.getWritableDatabase();
 
         btnClear = (Button) view.findViewById(R.id.btn_clear);
+        btnGrp = (Button) view.findViewById(R.id.btn_groups);
 
         btnClear.setOnClickListener(this);
+        btnGrp.setOnClickListener(this);
 
         return view;
     }
@@ -84,6 +91,11 @@ public class Settings extends Fragment implements View.OnClickListener {
         switch (v.getId()) {
             case R.id.btn_clear:
                 createTwoButtonsAlertDialog("Вы уверены, что хотите очистить историю ответов?", "");
+                break;
+            case R.id.btn_groups:
+                Intent intent = new Intent(thisContext, GroupsActivity.class);
+                startActivity(intent);
+                break;
         }
     }
 }
