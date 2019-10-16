@@ -5,19 +5,25 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.Fragment;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Words extends Fragment implements View.OnClickListener {
 
@@ -31,8 +37,19 @@ public class Words extends Fragment implements View.OnClickListener {
     int rightAnswer = -1;
     int rusWId = -1;
     int engWId = -1;
+    int curGrp = -1;
     boolean language_change = true;
+    boolean one_click = true;
     String rightWord;
+    ProgressBar progressBar;
+    List<String> groups = new ArrayList<String>();
+    //Spinner spinner;
+
+    boolean gameOn = false;
+    Handler mHandler;
+    long startTime;
+
+    /*Group groupBtn;*/
 
     public Words() {
     }
@@ -50,11 +67,43 @@ public class Words extends Fragment implements View.OnClickListener {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.main, menu);
+
+        MenuItem item = menu.findItem(R.id.item_grp);
+        Spinner spinner = (Spinner) item.getActionView();
+
+        fillGroup();
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(thisContext, R.layout.spiner, groups);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(adapter);
+
+        AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+                String item = (String) parent.getItemAtPosition(position);
+                Cursor c = myDB.rawQuery("SELECT ifnull(max(id_group), -1)\n" +
+                        "  FROM groups\n" +
+                        " WHERE lower(name_group) = ?", new String[]{item.toLowerCase()});
+                c.moveToFirst();
+
+                while (!c.isAfterLast()) {
+                    curGrp = c.getInt(0);
+                    c.moveToNext();
+                }
+                c.close();
+                printWord();
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        };
+        spinner.setOnItemSelectedListener(itemSelectedListener);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-         switch (item.getItemId()) {
+        switch (item.getItemId()) {
             case R.id.item_change:
                 if (language_change) {
                     language_change = false;
@@ -63,6 +112,8 @@ public class Words extends Fragment implements View.OnClickListener {
                     language_change = true;
                     printWord();
                 }
+                break;
+            case R.id.item_grp:
                 break;
         }
         return true;
@@ -84,7 +135,7 @@ public class Words extends Fragment implements View.OnClickListener {
         btn5 = (Button) view.findViewById(R.id.btn5);
         btn6 = (Button) view.findViewById(R.id.btn6);
         tw = (TextView) view.findViewById(R.id.textView);
-
+        progressBar = (ProgressBar) view.findViewById(R.id.progressBar);
         /*groupBtn = (Group) view.findViewById(R.id.groupBtn);*/
 
         btn1.setOnClickListener(this);
@@ -99,44 +150,80 @@ public class Words extends Fragment implements View.OnClickListener {
         return view;
     }
 
-    @Override
-    public void onClick(View v) {
+    public void fillGroup() {
+        Cursor c = myDB.rawQuery("SELECT *\n" +
+                "  FROM (\n" +
+                "           SELECT g.name_group as name_group,\n" +
+                "                  g.id_group as id_group\n" +
+                "             FROM groups g\n" +
+                "           UNION\n" +
+                "           SELECT 'Все' as name_group,\n" +
+                "                -1 as id_group\n" +
+                "       )\n" +
+                " ORDER BY id_group", null);
+        c.moveToFirst();
 
-        switch (v.getId()) {
-            case R.id.btn1:
-                selectAnswer(btn1, 1);
-                break;
-            case R.id.btn2:
-                selectAnswer(btn2, 2);
-                break;
-            case R.id.btn3:
-                selectAnswer(btn3, 3);
-                break;
-            case R.id.btn4:
-                selectAnswer(btn4, 4);
-                break;
-            case R.id.btn5:
-                selectAnswer(btn5, 5);
-                break;
-            case R.id.btn6:
-                selectAnswer(btn6, 6);
-                break;
+        while (!c.isAfterLast()) {
+            groups.add(c.getString(0).toLowerCase());
+            c.moveToNext();
         }
-
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                printWord();
-            }
-        }, 2000);
+        c.close();
     }
 
-    /*@Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putInt(SOME_VALUE_KEY, someStateValue);
-        super.onSaveInstanceState(outState);
-    }*/
+    @Override
+    public void onClick(View v) {
+        if (one_click) {
+            one_click = false;
+
+            switch (v.getId()) {
+                case R.id.btn1:
+                    selectAnswer(btn1, 1);
+                    break;
+                case R.id.btn2:
+                    selectAnswer(btn2, 2);
+                    break;
+                case R.id.btn3:
+                    selectAnswer(btn3, 3);
+                    break;
+                case R.id.btn4:
+                    selectAnswer(btn4, 4);
+                    break;
+                case R.id.btn5:
+                    selectAnswer(btn5, 5);
+                    break;
+                case R.id.btn6:
+                    selectAnswer(btn6, 6);
+                    break;
+            }
+
+            startTime = System.currentTimeMillis();
+            mHandler = new Handler() {
+                public void handleMessage(Message msg) {
+                    super.handleMessage(msg);
+
+                    if (gameOn) {
+                        long seconds = ((System.currentTimeMillis() - startTime));
+                        progressBar.setProgress((int) seconds);
+                    }
+
+                    mHandler.sendEmptyMessageDelayed(0, 10);
+                }
+            };
+
+            gameOn = true;
+            mHandler.sendEmptyMessage(0);
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    printWord();
+                    one_click = true;
+                    gameOn = false;
+                }
+            }, 1500);
+        }
+    }
 
     public void selectAnswer(Button btn, int id) {
         String sql;
@@ -172,6 +259,8 @@ public class Words extends Fragment implements View.OnClickListener {
         int b = 6; // конечное значение диапазона для кнопок
         rightAnswer = a + (int) (Math.random() * b);
 
+        progressBar.setProgress(0);
+
         for (int i = 0; i < 2; i++) {
 
             if (i == 0) {
@@ -200,7 +289,8 @@ public class Words extends Fragment implements View.OnClickListener {
                     "                             _id_rus_word,\n" +
                     "                             name_rus_word,\n" +
                     "                             wrong_minus_right,\n" +
-                    "                             CAST ( (julianday('now', 'localtime') - julianday(cur_date) ) * 24 * 60 AS INTEGER) AS last_time\n" +
+                    "                             CAST ( (julianday('now', 'localtime') - julianday(cur_date) ) " +
+                    "* 24 * 60 AS INTEGER) AS last_time\n" +
                     "                        FROM (\n" +
                     "                                 SELECT ( (\n" +
                     "                                              SELECT count( * ) \n" +
@@ -314,11 +404,17 @@ public class Words extends Fragment implements View.OnClickListener {
                     "                  ew._id_eng_word,\n" +
                     "                  rw._id_rus_word,\n" +
                     "                  rw.name_rus_word\n" +
-                    "             FROM eng_words ew,\n" +
-                    "                  rus_words rw,\n" +
-                    "                  rus_eng_words rew\n" +
-                    "            WHERE ew._id_eng_word = rew.id_eng_word AND \n" +
-                    "                  rew.id_rus_word = rw._id_rus_word\n" +
+                    "             FROM eng_words ew\n" +
+                    "                  LEFT JOIN\n" +
+                    "                  rus_eng_words rew ON ew._id_eng_word = rew.id_eng_word\n" +
+                    "                  LEFT JOIN\n" +
+                    "                  rus_words rw ON rw._id_rus_word = rew.id_rus_word\n" +
+                    "                  LEFT JOIN\n" +
+                    "                  groups_eng_words gew ON gew.id_eng_word = ew._id_eng_word\n" +
+                    "                  LEFT JOIN\n" +
+                    "                  groups g ON g.id_group = gew.id_group\n" +
+                    "            WHERE (g.id_group = " + curGrp + " OR \n" +
+                    "                    -1 = + " + curGrp + ") \n" +
                     "           EXCEPT\n" +
                     "           SELECT *\n" +
                     "             FROM minus\n" +
@@ -327,22 +423,6 @@ public class Words extends Fragment implements View.OnClickListener {
                     " LIMIT 1", null);
         }
         c.moveToFirst();
-
-        /*c.moveToFirst();
-        if (c.getInt(0) == -1) {
-            c = myDB.rawQuery("SELECT ew.name_eng_word,\n" +
-                    "       ew._id_eng_word,\n" +
-                    "       rw._id_rus_word,\n" +
-                    "       rw.name_rus_word\n" +
-                    "  FROM eng_words ew,\n" +
-                    "       rus_words rw,\n" +
-                    "       rus_eng_words rew\n" +
-                    " WHERE ew._id_eng_word = rew.id_eng_word AND \n" +
-                    "       rew.id_rus_word = rw._id_rus_word \n" +
-                    " ORDER BY RANDOM() \n" +
-                    " LIMIT 1", null);
-        }
-        c.moveToFirst();*/
 
         while (!c.isAfterLast()) {
             engWName = c.getString(0);
@@ -390,7 +470,6 @@ public class Words extends Fragment implements View.OnClickListener {
         btn6.setTextColor(getResources().getColor(R.color.textColor));
 
         //groupBtn.setBackgroundResource(R.drawable.btn_wrong_answer);
-
 
         if (language_change) {
             tw.setText(engWName);
@@ -458,3 +537,4 @@ public class Words extends Fragment implements View.OnClickListener {
         }
     }
 }
+

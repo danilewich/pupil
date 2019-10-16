@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/item_grp"
+        app:showAsAction="always"
+        android:title="@string/item_grp"
+        app:actionViewClass="android.widget.Spinner">
+    </item>
+
+    <item
         android:id="@+id/item_change"
         android:icon="@drawable/ic_loop_black_24dp"
         app:showAsAction="always"
